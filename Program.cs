@@ -1,5 +1,7 @@
 using BlazorChatApp.Components;
 using BlazorChatApp.Hubs;
+using BlazorChatApp.Models;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,3 +32,6 @@ app.Run();
 builder.Services.AddSignalR(); // Register SignalR in dependency injection.
 
 app.MapHub<ChatHub>("/chathub"); // Maps the SignalR hub so clients can connect via "/chathub".
+
+builder.Services.AddDbContext<ChatDbContext>(options =>
+    options.UseSqlServer("YourConnectionString"));

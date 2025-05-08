@@ -1,0 +1,49 @@
+﻿@page "/chat" // Defines the route for the chat page.
+@using Microsoft.AspNetCore.SignalR.Client // Allows connection to SignalR hub.
+@inject NavigationManager NavigationManager // Enables navigation-related features.
+
+<h3>Real-Time Chat</h3>
+
+<input @bind="UserName" placeholder="Enter your name" /> <!-- Bind username input -->
+<input @bind="MessageInput" placeholder="Type a message" @onkeypress="SendOnEnter" /> <!-- Bind chat message input -->
+<button @onclick="SendMessage">Send</button> <!-- Button to send message -->
+
+<ul>
+    @foreach (var message in Messages)
+    {
+        <li>@message</li> <!-- Display messages in the list -->
+    }
+</ul>
+
+@code {
+    private HubConnection? hubConnection; // Manages SignalR connection.
+    private string? UserName;
+    private string? MessageInput;
+    private List<string> Messages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Establish connection to SignalR Hub.
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        // Listen for incoming messages.
+        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        {
+            Messages.Add($"{user}: {message}");
+            InvokeAsync(StateHasChanged); // Refresh UI.
+        });
+
+        await hubConnection.StartAsync(); // Start connection.
+    }
+
+    private async Task SendMessage()
+    {
+        // Ensure user & message are not empty before sending.
+        if (!string.IsNullOrEmpty(UserName) && !string.IsNullOrEmpty(MessageInput))
+        {
+            await hubConnection.SendAsync("SendMessage", UserName, MessageInput);
+        }
+    }
+}
